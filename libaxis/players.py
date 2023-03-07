@@ -1,4 +1,7 @@
+import logging
 import sqlite3
+
+logger = logging.getLogger('main')
 
 
 def init_db():
@@ -16,8 +19,9 @@ def ensure_exists(player_id: int, discord_name: str, display_name: str):
     global PLAYERS
     PLAYERS.execute("INSERT OR IGNORE INTO players(id, discord_name, display_name, balance) "
                     "VALUES(?, ?, ?, 0)",
-                    (player_id, discord_name, display_name, ))
+                    (player_id, discord_name, display_name,))
     PLAYERS.commit()
+    logger.info(f"Player {discord_name} ({display_name}) added to database")
 
 
 def get_balance(player_id: int) -> int:
@@ -36,6 +40,11 @@ def get_balance(player_id: int) -> int:
 def add_balance(player_id: int, gold: int):
     """ Increase player balance (deposited into guild bank)
     """
+    if gold < 0:
+        logger.info(f"Removing {-gold} gold from player {player_id}")
+    else:
+        logger.info(f"Adding {gold} gold to player {player_id}")
+
     global PLAYERS
     c = PLAYERS.cursor()
     c.execute("UPDATE players SET balance = balance + (?) WHERE id = ?", (gold, player_id))

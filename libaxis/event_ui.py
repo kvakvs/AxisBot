@@ -7,12 +7,16 @@ from libaxis import events
 
 
 class EventView(discord.ui.View):
-    def __init__(self, *, event_id: int, timeout: Optional[float] = 180.0):
+    def __init__(self, *, event_id: int, timeout: Optional[float] = 60.0):
         super().__init__(timeout=timeout)
+        self.event_id = event_id
+        self.message = None
 
     async def on_timeout(self) -> None:
-        self.children.clear()
-        return await super().on_timeout()
+        # for item in self.children:
+        #     item.disabled = True
+        self.children.clear()  # empty the buttons frame
+        await self.message.edit(view=self)
 
 
 #     @discord.ui.button(label="Hello", style=discord.ButtonStyle.success)

@@ -227,6 +227,18 @@ async def update_event_embed(event_id: int, client: discord.Client):
     await msg.edit(embed=create_embed(event_id))
 
 
+async def bump_event(event_id: int, client: discord.Client):
+    """
+    Repost event id, and delete the one higher up
+    """
+    event = event_from_id(event_id)
+    channel = client.get_channel(event.channel_id)
+    msg = await channel.fetch_message(event.embed_id)
+    await msg.delete(delay=1.0)
+    bumped = await channel.send(embed=create_embed(event_id))
+    update_event_embed_id(event_id, bumped.id)
+
+
 def find_latest_event():
     global EVENTS
     c = EVENTS.cursor()

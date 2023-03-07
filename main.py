@@ -1,9 +1,19 @@
+import logging
 from typing import Optional
 
 import discord
 from libaxis.bot_client import MyClient
 from libaxis import players, events, event_ui
 from libaxis.conf import conf, bot_conf, guild_conf
+
+logging.basicConfig(filename="axisbot.log",
+                    filemode='a',
+                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                    datefmt='%H:%M:%S',
+                    level=logging.DEBUG)
+
+logging.info("Running Axis Bot")
+logger = logging.getLogger('main')
 
 intents = discord.Intents(messages=True, reactions=True, guilds=True)
 # intents = discord.Intents(326417524800)
@@ -18,7 +28,7 @@ client = MyClient(conf=conf,
 
 @client.event
 async def on_ready():
-    print(f'Logged in as {client.user} (ID: {client.user.id})')
+    logger.info(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
 @client.tree.command()
@@ -75,7 +85,8 @@ async def bid(interaction: discord.Interaction):
             custom_id=f"outcome_id={outcome.outcome_id}")
         view.add_item(b)
 
-    _buttons_sent = await interaction.user.send(view=view)
+    view.message = await interaction.user.send(view=view)  # save sent message for update on timeout
+    await interaction.response.send_message(f'Sent you a private message, please check', ephemeral=True)
 
 
 @client.tree.command()
@@ -92,6 +103,8 @@ async def ulduar(interaction: discord.Interaction, name: str):
         await interaction.response.send_message(f'Must have {role_name} role to create events', ephemeral=True)
         return
 
+    # create event
+    logger.info(f'Creating event "{name}" for {interaction.user.display_name} in channel {interaction.channel_id}')
     event_id, embed = events.add_ulduar_event(author=interaction.user.display_name, name=name,
                                               channel=interaction.channel_id)
 
@@ -99,27 +112,22 @@ async def ulduar(interaction: discord.Interaction, name: str):
     embed_update = await interaction.channel.send(embed=embed)
     events.update_event_embed_id(event_id=event_id, embed_id=embed_update.id)
 
-    # # post buttons view
-    # view = event_ui.EventView(event_id=event_id)
-    #
-    # for outcome in events.get_outcomes(event_id=event_id):
-    #     # emoji = discord.PartialEmoji(name=outcome.get_first_word())
-    #     bet_amount = guild_conf['bet_amount']
-    #     b = event_ui.OutcomeButton(
-    #         client=client,
-    #         event_id=event_id,
-    #         outcome_id=outcome.outcome_id,
-    #         gold=bet_amount,
-    #         outcome_name=outcome.name,
-    #         style=discord.ButtonStyle.grey,
-    #         label=f"+{bet_amount} {outcome.cut_first_word()}",
-    #         custom_id=f"outcome_id={outcome.outcome_id}")
-    #     view.add_item(b)
-    #
-    # buttons_sent = await interaction.channel.send(view=view)
+    await interaction.response.send_message(
+        f'Event "{name}" has been created, use /bid to show the bidding buttons',
+        ephemeral=True)
+    # return bid(interaction)
 
-    await interaction.response.send_message(f'Event "{name} has been created"', ephemeral=True)
-    return bid(interaction)
+
+@client.tree.command()
+async def bump(interaction: discord.Interaction):
+    """
+    Repost the latest event again and delete it high up in the channel
+    """
+    event_id = events.find_latest_event()
+    if event_id is None:
+        await interaction.response.send_message(f'No event exists, can''t bump just yet', ephemeral=True)
+        return
+    await events.bump_event(event_id=event_id, client=client)
 
 
 # # The rename decorator allows us to change the display of the parameter on Discord.
