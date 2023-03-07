@@ -127,8 +127,9 @@ async def bump(interaction: discord.Interaction):
     if event_id is None:
         await interaction.response.send_message(f'No event exists, can''t bump just yet', ephemeral=True)
         return
-    await events.bump_event(event_id=event_id, client=client)
 
+    await events.bump_event(event_id=event_id, client=client)
+    await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted', ephemeral=True)
 
 # # The rename decorator allows us to change the display of the parameter on Discord.
 # # In this example, even though we use `text_to_send` in the code, the client will use `text` instead.

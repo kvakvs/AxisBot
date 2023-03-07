@@ -17,7 +17,7 @@ PLAYERS = init_db()
 
 def ensure_exists(player_id: int, discord_name: str, display_name: str):
     global PLAYERS
-    PLAYERS.execute("INSERT OR IGNORE INTO players(id, discord_name, display_name, balance) "
+    PLAYERS.execute("INSERT OR IGNORE INTO players(player_id, discord_name, display_name, balance) "
                     "VALUES(?, ?, ?, 0)",
                     (player_id, discord_name, display_name,))
     PLAYERS.commit()
@@ -32,7 +32,7 @@ def get_balance(player_id: int) -> int:
     """
     global PLAYERS
     c = PLAYERS.cursor()
-    c.execute("SELECT balance FROM players WHERE id = ?", (player_id,))
+    c.execute("SELECT balance FROM players WHERE player_id = ?", (player_id,))
     result = c.fetchone()
     return result[0] if result is not None else 0
 
@@ -47,5 +47,13 @@ def add_balance(player_id: int, gold: int):
 
     global PLAYERS
     c = PLAYERS.cursor()
-    c.execute("UPDATE players SET balance = balance + (?) WHERE id = ?", (gold, player_id))
+    c.execute("UPDATE players SET balance = balance + (?) WHERE player_id = ?", (gold, player_id))
     PLAYERS.commit()
+
+
+def get_display_name(player_id: int) -> str:
+    global PLAYERS
+    c = PLAYERS.cursor()
+    c.execute("SELECT display_name FROM players WHERE player_id = ?", (player_id,))
+    result = c.fetchone()
+    return result[0] if result is not None and result[0] is not None else None

@@ -87,37 +87,36 @@ def get_outcomes(event_id: int) -> list[Outcome]:
 
 
 class Bet:
-    def __init__(self, bet_id: int, outcome_id: int, event_id: int, player_id: int, display_name: str, amount: int):
+    def __init__(self, bet_id: int, outcome_id: int, event_id: int, player_id: int, amount: int):
         self.bet_id = bet_id
         self.outcome_id = outcome_id
         self.event_id = event_id
         self.player_id = player_id
-        self.display_name = display_name
         self.amount = amount
 
 
 def bet_from_id(bet_id: int) -> Bet:
     global EVENTS
     c = EVENTS.cursor()
-    c.execute("SELECT bet_id, outcome_id, event_id, player_id, display_name, amount "
+    c.execute("SELECT bet_id, outcome_id, event_id, player_id, amount "
               "FROM bets WHERE bet_id = ?", (bet_id,))
     result = c.fetchone()
     return Bet(bet_id=result[0],
                outcome_id=result[1],
                event_id=result[2],
                player_id=result[3],
-               display_name=result[4],
-               amount=result[5]) if result is not None else None
+               amount=result[4]) if result is not None else None
 
 
 def format_bet(bet: Bet) -> str:
-    return f"{bet.display_name} ({bet.amount})"
+    display_name = players.get_display_name(player_id=bet.player_id)
+    return f"{display_name} ({bet.amount})"
 
 
 def get_bets(outcome_id: int) -> list[Bet]:
     global EVENTS
     c = EVENTS.cursor()
-    c.execute("SELECT bet_id, outcome_id, event_id, player_id, display_name, amount "
+    c.execute("SELECT bet_id, outcome_id, event_id, player_id, amount "
               "FROM bets WHERE outcome_id = ? "
               "ORDER BY bet_id", (outcome_id,))
     result = c.fetchall()
@@ -125,8 +124,7 @@ def get_bets(outcome_id: int) -> list[Bet]:
                 outcome_id=row[1],
                 event_id=row[2],
                 player_id=row[3],
-                display_name=row[4],
-                amount=row[5])
+                amount=row[4])
             for row in result] if result is not None else []
 
 
@@ -204,9 +202,9 @@ def bet_on_outcome(event_id: int, outcome_id: int, player_id: int, display_name:
     players.add_balance(player_id=player_id, gold=-gold)
 
     global EVENTS
-    EVENTS.execute("INSERT OR IGNORE INTO bets(outcome_id, event_id, player_id, display_name, amount) "
-                   "VALUES(?, ?, ?, ?, 0)",
-                   (outcome_id, event_id, player_id, display_name,))
+    EVENTS.execute("INSERT OR IGNORE INTO bets(outcome_id, event_id, player_id, amount) "
+                   "VALUES(?, ?, ?, 0)",
+                   (outcome_id, event_id, player_id,))
     EVENTS.execute("UPDATE bets SET amount = amount + ? WHERE outcome_id = ? AND player_id = ?",
                    (gold, outcome_id, player_id,))
     EVENTS.commit()

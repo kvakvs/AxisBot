@@ -4,7 +4,7 @@
 
 CREATE TABLE IF NOT EXISTS players
 (
-    id           integer PRIMARY KEY,
+    player_id    integer PRIMARY KEY,
     discord_name text,
     display_name text,
     balance      integer
@@ -34,13 +34,12 @@ CREATE TABLE IF NOT EXISTS outcomes
 
 CREATE TABLE IF NOT EXISTS bets
 (
-    bet_id       integer PRIMARY KEY AUTOINCREMENT,
-    player_id    integer,
-    display_name text,
-    amount       integer,
-    event_id     integer NOT NULL,
-    outcome_id   integer NOT NULL,
-    UNIQUE(outcome_id, player_id), -- one outcome+player combination, multiple bets increase the amount
+    bet_id     integer PRIMARY KEY AUTOINCREMENT,
+    player_id  integer,
+    amount     integer,
+    event_id   integer NOT NULL,
+    outcome_id integer NOT NULL,
+    UNIQUE (outcome_id, player_id), -- one outcome+player combination, multiple bets increase the amount
     FOREIGN KEY (event_id) REFERENCES events (event_id),
     FOREIGN KEY (outcome_id) REFERENCES outcomes (outcome_id)
 );
