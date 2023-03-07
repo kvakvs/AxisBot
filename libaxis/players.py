@@ -33,10 +33,10 @@ def get_balance(player_id: int) -> int:
     return result[0] if result is not None else 0
 
 
-def add_balance(player_id: int, balance: int):
+def add_balance(player_id: int, gold: int):
     """ Increase player balance (deposited into guild bank)
     """
     global PLAYERS
     c = PLAYERS.cursor()
-    c.execute("UPDATE players SET balance = balance + (?) WHERE id = ?", (balance, player_id))
+    c.execute("UPDATE players SET balance = balance + (?) WHERE id = ?", (gold, player_id))
     PLAYERS.commit()

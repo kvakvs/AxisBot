@@ -1,19 +1,13 @@
 from typing import Optional
 
 import discord
-import yaml
-
 from libaxis.bot_client import MyClient
-from libaxis import players, events
+from libaxis import players, events, event_ui
+from libaxis.conf import conf, bot_conf, guild_conf
 
 intents = discord.Intents(messages=True, reactions=True, guilds=True)
 # intents = discord.Intents(326417524800)
 # intents.reactions.flag
-
-conf = yaml.load(open('config.yaml', encoding='utf-8-sig').read(), Loader=yaml.Loader)
-
-bot_conf = conf['bot']
-guild_conf = conf['guild']
 
 print(f"Starting bot for guild {guild_conf['id']} ({guild_conf['name']})")
 client = MyClient(conf=conf,
@@ -25,7 +19,6 @@ client = MyClient(conf=conf,
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
-    print('------')
 
 
 @client.tree.command()
@@ -36,9 +29,7 @@ async def on_ready():
 async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):
     """ (Admin only) Player has deposited (positive) or withdrew (negative) gold.
     """
-    global guild_conf
-
-    players.ensure_exists(who.id, who.name, who.display_name)
+    players.ensure_exists(who.id, str(who), who.display_name)
     role_name = guild_conf['manager_role']
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
@@ -58,14 +49,42 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
 
 
 @client.tree.command()
+# @discord.app_commands.describe()
+async def bid(interaction: discord.Interaction):
+    """ Any participant can bid on the latest event
+    """
+    event_id = events.find_latest_event()
+    if event_id is None:
+        await interaction.response.send_message(f'No event exists, can''t bid just yet', ephemeral=True)
+        return
+
+    # post buttons view
+    view = event_ui.EventView(event_id=event_id)
+
+    for outcome in events.get_outcomes(event_id=event_id):
+        # emoji = discord.PartialEmoji(name=outcome.get_first_word())
+        bet_amount = guild_conf['bet_amount']
+        b = event_ui.OutcomeButton(
+            client=client,
+            event_id=event_id,
+            outcome_id=outcome.outcome_id,
+            gold=bet_amount,
+            outcome_name=outcome.name,
+            style=discord.ButtonStyle.grey,
+            label=f"+{bet_amount} {outcome.cut_first_word()}",
+            custom_id=f"outcome_id={outcome.outcome_id}")
+        view.add_item(b)
+
+    _buttons_sent = await interaction.user.send(view=view)
+
+
+@client.tree.command()
 @discord.app_commands.describe(
     name='The title for the event',
 )
 async def ulduar(interaction: discord.Interaction, name: str):
     """ (Admin only) Creates an Ulduar gambo event
     """
-    global guild_conf
-
     role_name = guild_conf['manager_role']
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
@@ -73,24 +92,34 @@ async def ulduar(interaction: discord.Interaction, name: str):
         await interaction.response.send_message(f'Must have {role_name} role to create events', ephemeral=True)
         return
 
-    embed = events.add_ulduar_event(author=interaction.user.display_name, name=name, channel=interaction.channel_id)
+    event_id, embed = events.add_ulduar_event(author=interaction.user.display_name, name=name,
+                                              channel=interaction.channel_id)
 
-    # post embed and buttons
-    await interaction.channel.send(embed=embed)
+    # post embed
+    embed_update = await interaction.channel.send(embed=embed)
+    events.update_event_embed_id(event_id=event_id, embed_id=embed_update.id)
 
-    buttons = [
-        discord.Button(style=discord.ButtonStyle.url,
-                       label="Example Invite Button",
-                       url="https://google.com"),
-        discord.Button(style=discord.ButtonStyle.blue,
-                       label="Default Button",
-                       custom_id="button")
-    ]
-    await interaction.channel.send(type=discord.InteractionType.ChannelMessageWithSource,
-                                   content="Your bet?",
-                                   components=buttons)
+    # # post buttons view
+    # view = event_ui.EventView(event_id=event_id)
+    #
+    # for outcome in events.get_outcomes(event_id=event_id):
+    #     # emoji = discord.PartialEmoji(name=outcome.get_first_word())
+    #     bet_amount = guild_conf['bet_amount']
+    #     b = event_ui.OutcomeButton(
+    #         client=client,
+    #         event_id=event_id,
+    #         outcome_id=outcome.outcome_id,
+    #         gold=bet_amount,
+    #         outcome_name=outcome.name,
+    #         style=discord.ButtonStyle.grey,
+    #         label=f"+{bet_amount} {outcome.cut_first_word()}",
+    #         custom_id=f"outcome_id={outcome.outcome_id}")
+    #     view.add_item(b)
+    #
+    # buttons_sent = await interaction.channel.send(view=view)
 
     await interaction.response.send_message(f'Event "{name} has been created"', ephemeral=True)
+    return bid(interaction)
 
 
 # # The rename decorator allows us to change the display of the parameter on Discord.

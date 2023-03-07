@@ -1,7 +1,11 @@
+import logging
 import sqlite3
-from typing import Optional
+from typing import Optional, Tuple
 
 import discord
+
+from libaxis import players
+from libaxis.conf import guild_conf
 
 
 def init_db():
@@ -29,7 +33,7 @@ class Event:
         c = EVENTS.cursor()
         c.execute("SELECT SUM(amount) FROM bets WHERE event_id = ?", (self.event_id,))
         result = c.fetchone()
-        return result[0] if result is not None else 0
+        return result[0] if result[0] is not None else 0
 
 
 def event_from_id(event_id: int) -> Event:
@@ -50,6 +54,13 @@ class Outcome:
         self.outcome_id = outcome_id
         self.event_id = event_id
         self.name = name
+
+    def cut_first_word(self):
+        """ Return everything AFTER the first word, which should be all text after :emoji: """
+        return self.name.split(sep=" ", maxsplit=1)[1]
+
+    def get_first_word(self):
+        return self.name.split(sep=" ", maxsplit=1)[0]
 
 
 def outcome_from_id(outcome_id: int) -> Outcome:
@@ -140,12 +151,15 @@ def create_embed(event_id: int) -> discord.Embed:
                      icon_url="https://cdn.discordapp.com/app-icons/1082679337855226016/74d03e19ceff7789ab0c6828c3346558.png?size=64")
 
     pot = event.get_pot()
-    embed.set_footer(text=f"Total pot: {pot}")
+    embed.set_footer(text=f"Total in the pot: {pot}\n"
+                          "Can i bet more? Yes you can, but you can't win more than there was in the pot!\n"
+                          f"Drop a multiple of x{guild_conf['bet_amount']} gold into the guild bank, and ask an "
+                          f"officer to confirm your deposit by using a `/wallet` command")
 
     return embed
 
 
-def add_ulduar_event(author: str, name: str, channel: int) -> discord.Embed:
+def add_ulduar_event(author: str, name: str, channel: int) -> Tuple[int, discord.Embed]:
     """
     Add an Ulduar event to the database
     :param author: Who created the event
@@ -166,7 +180,7 @@ def add_ulduar_event(author: str, name: str, channel: int) -> discord.Embed:
                  ":dragon_face: Razorscale",
                  ":recycle: XT-002",
                  ":blue_circle: Assembly of Iron",
-                 "Kologarn",
+                 ":hand_splayed: Kologarn",
                  ":cat: Auriaya",
                  ":fire_engine: Mimiron",
                  ":snowflake: Hodir",
@@ -176,4 +190,46 @@ def add_ulduar_event(author: str, name: str, channel: int) -> discord.Embed:
         EVENTS.execute("INSERT INTO outcomes(event_id, name) VALUES(?, ?)", (event_id, boss,))
 
     EVENTS.commit()
-    return create_embed(event_id)
+    return event_id, create_embed(event_id)
+
+
+def bet_on_outcome(event_id: int, outcome_id: int, player_id: int, display_name: str, gold: int) -> bool:
+    wallet = players.get_balance(player_id=player_id)
+    if wallet < gold:
+        return False
+
+    outcome = outcome_from_id(outcome_id)
+
+    logging.info(f"Player {player_id} ({display_name}) bets {gold} on id={outcome_id} ({outcome.name})")
+    players.add_balance(player_id=player_id, gold=-gold)
+
+    global EVENTS
+    EVENTS.execute("INSERT OR IGNORE INTO bets(outcome_id, event_id, player_id, display_name, amount) "
+                   "VALUES(?, ?, ?, ?, 0)",
+                   (outcome_id, event_id, player_id, display_name,))
+    EVENTS.execute("UPDATE bets SET amount = amount + ? WHERE outcome_id = ? AND player_id = ?",
+                   (gold, outcome_id, player_id,))
+    EVENTS.commit()
+
+    return True
+
+
+def update_event_embed_id(event_id: int, embed_id: int):
+    global EVENTS
+    EVENTS.execute("UPDATE events SET embed_id = ? WHERE event_id = ?", (embed_id, event_id,))
+    EVENTS.commit()
+
+
+async def update_event_embed(event_id: int, client: discord.Client):
+    event = event_from_id(event_id)
+    channel = client.get_channel(event.channel_id)
+    msg = await channel.fetch_message(event.embed_id)
+    await msg.edit(embed=create_embed(event_id))
+
+
+def find_latest_event():
+    global EVENTS
+    c = EVENTS.cursor()
+    c.execute("SELECT event_id FROM events ORDER BY event_id DESC LIMIT 1")
+    result = c.fetchone()
+    return result[0] if result[0] is not None else None

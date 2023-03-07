@@ -40,6 +40,7 @@ CREATE TABLE IF NOT EXISTS bets
     amount       integer,
     event_id     integer NOT NULL,
     outcome_id   integer NOT NULL,
+    UNIQUE(outcome_id, player_id), -- one outcome+player combination, multiple bets increase the amount
     FOREIGN KEY (event_id) REFERENCES events (event_id),
     FOREIGN KEY (outcome_id) REFERENCES outcomes (outcome_id)
 );
