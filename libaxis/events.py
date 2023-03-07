@@ -135,6 +135,7 @@ def format_outcome(outcome: Outcome) -> str:
 def create_embed(event_id: int) -> discord.Embed:
     event = event_from_id(event_id)
     embed = discord.Embed(title=event.name,
+                          url="https://github.com/kvakvs/AxisBot/blob/master/README.md",
                           description="Bets for Ulduar",
                           color=0xFF5733)
 

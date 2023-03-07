@@ -9,6 +9,7 @@ Use at your own risk, the source is free for all.
 a fragment of Val'anyr.
 
 * `/wallet` After player deposits some gold to the pot (guild bank or trade the organizer), records the deposited gold.
+  Negative amount takes the gold from the wallet (refund).
 
 * `/bid` Sends a bunch of bidding buttons to the player's private messages. Each button bids the bid amount (multiple
   bids allowed). Bid amount is set in the config .yaml file.
