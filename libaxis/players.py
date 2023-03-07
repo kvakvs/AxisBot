@@ -12,9 +12,11 @@ def init_db():
 PLAYERS = init_db()
 
 
-def ensure_exists(player_id: int, player_name: str):
+def ensure_exists(player_id: int, discord_name: str, display_name: str):
     global PLAYERS
-    PLAYERS.execute("INSERT OR IGNORE INTO players(id, name, balance) VALUES(?, ?, 0)", (player_id, player_name,))
+    PLAYERS.execute("INSERT OR IGNORE INTO players(id, discord_name, display_name, balance) "
+                    "VALUES(?, ?, ?, 0)",
+                    (player_id, discord_name, display_name, ))
     PLAYERS.commit()
 
 

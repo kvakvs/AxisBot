@@ -38,7 +38,7 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
     """
     global guild_conf
 
-    players.ensure_exists(who.id, who.name)
+    players.ensure_exists(who.id, who.name, who.display_name)
     role_name = guild_conf['manager_role']
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
@@ -73,7 +73,24 @@ async def ulduar(interaction: discord.Interaction, name: str):
         await interaction.response.send_message(f'Must have {role_name} role to create events', ephemeral=True)
         return
 
-    events.add_ulduar_event(name, channel=interaction.channel_id)
+    embed = events.add_ulduar_event(author=interaction.user.display_name, name=name, channel=interaction.channel_id)
+
+    # post embed and buttons
+    await interaction.channel.send(embed=embed)
+
+    buttons = [
+        discord.Button(style=discord.ButtonStyle.url,
+                       label="Example Invite Button",
+                       url="https://google.com"),
+        discord.Button(style=discord.ButtonStyle.blue,
+                       label="Default Button",
+                       custom_id="button")
+    ]
+    await interaction.channel.send(type=discord.InteractionType.ChannelMessageWithSource,
+                                   content="Your bet?",
+                                   components=buttons)
+
+    await interaction.response.send_message(f'Event "{name} has been created"', ephemeral=True)
 
 
 # # The rename decorator allows us to change the display of the parameter on Discord.
