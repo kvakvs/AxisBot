@@ -18,4 +18,8 @@ a fragment of Val'anyr.
 
 ## Invite Link
 
+Production bot:
 https://discord.com/api/oauth2/authorize?client_id=1082679337855226016&permissions=309237655616&scope=bot
+
+Development version: 
+https://discord.com/api/oauth2/authorize?client_id=1083097281907138670&permissions=326417590336&scope=bot

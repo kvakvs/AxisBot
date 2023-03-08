@@ -43,3 +43,12 @@ CREATE TABLE IF NOT EXISTS bets
     FOREIGN KEY (event_id) REFERENCES events (event_id),
     FOREIGN KEY (outcome_id) REFERENCES outcomes (outcome_id)
 );
+
+-- DROP TABLE IF EXISTS quotes;
+CREATE TABLE IF NOT EXISTS quotes
+(
+    quote_key text PRIMARY KEY, -- short key to invoke the quote.py
+    player_id integer,
+    quote     text,             -- the quote.py
+    UNIQUE (quote_key)
+);
