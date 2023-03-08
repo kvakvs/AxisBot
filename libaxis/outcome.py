@@ -16,6 +16,14 @@ class Outcome:
     def get_first_word(self):
         return self.name.split(sep=" ", maxsplit=1)[0]
 
+    def is_available(self):
+        """
+        Check outcome availability for bet placement
+        :return: True if the outcome doesn't have a bet placed on it
+        """
+        from libaxis import bet
+        return bet.find_outcome_bet(self.event_id, self.outcome_id) is None
+
 
 def outcome_from_id(outcome_id: int) -> Outcome:
     global DATABASE

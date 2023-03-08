@@ -78,7 +78,14 @@ async def bid(interaction: discord.Interaction):
     # post buttons view
     view = event_ui.EventView(event_id=event_id)
 
-    for outcome in libaxis.outcome.get_outcomes(event_id=event_id):
+    available_outcomes = list(filter(lambda each_o: each_o.is_available(),
+                                     libaxis.outcome.get_outcomes(event_id=event_id)))
+    if len(available_outcomes) == 0:
+        await interaction.response.send_message(f':no_entry: All outcomes for this event have been taken',
+                                                ephemeral=True)
+        return
+
+    for outcome in available_outcomes:
         # emoji = discord.PartialEmoji(name=outcome.get_first_word())
         bet_amount = guild_conf['bet_amount']
         b = event_ui.OutcomeButton(
