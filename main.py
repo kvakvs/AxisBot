@@ -6,7 +6,8 @@ from typing import Optional
 import discord
 
 import libaxis.outcome
-from libaxis import commands, quote
+from libaxis import quote
+from libaxis.commands import quote_commands, event_commands
 from libaxis.bot_client import MyClient
 from libaxis.conf import conf, bot_conf, guild_conf
 
@@ -41,47 +42,39 @@ async def on_ready():
     gold='How much gold has been deposited (negative value for withdraw)',
 )
 async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):
-    return commands.wallet(interaction=interaction, who=who, gold=gold)
+    await event_commands.modify_or_show_wallet(interaction=interaction, who=who, gold=gold)
 
 
 @client.tree.command(description="Show buttons to bid on the latest event")
 async def bid(interaction: discord.Interaction):
-    return commands.bid(client=client, interaction=interaction)
+    await  event_commands.place_bid(client=client, interaction=interaction)
 
 
-@client.tree.command(description="Post a new Ulduar raid event. Only officers can do this, this makes previous event inaccessible.")
+@client.tree.command(
+    description="Post a new Ulduar raid event. Only officers can do this, this makes previous event inaccessible.")
 @discord.app_commands.describe(
     name='The title for the event',
 )
 async def ulduar(interaction: discord.Interaction, name: str):
-    return commands.ulduar(interaction=interaction, name=name)
+    await event_commands.post_ulduar_event(interaction=interaction, name=name)
 
 
 @client.tree.command(description="Repost the latest event, and delete the old message. Only officers can do this.")
 async def bump(interaction: discord.Interaction):
-    return commands.bump(client=client, interaction=interaction)
+    await event_commands.bump_event(client=client, interaction=interaction)
 
 
 # ===============================================================================
 # Quotes management and posting
 # ===============================================================================
 
-@client.tree.command(description="Teach bot a new quote.py. Takes a short key and text.")
+@client.tree.command(description="Teach bot a new quote. Takes a short key and text.")
 @discord.app_commands.describe(
     key='Quote key, a short word (no spaces)',
-    quote='The text to be stored',
+    text='The text to be stored',
 )
-async def learn(interaction: discord.Interaction, key: str, quote: str):
-    qte = libaxis.quote.get_quote(key=key)
-    if qte is not None and qte.player_id != interaction.user.id:
-        await interaction.response.send_message(
-            f":no_entry: Sorry, I already know that quote. And it is not yours. Use `/quote {key}` to post it.",
-            ephemeral=True)
-        return
-
-    libaxis.quote.learn_quote(player_id=interaction.user.id, quote_key=key, quote_text=quote)
-    await interaction.response.send_message(f"Learned a quote. Post using `/quote {key}`. Forget using `/forget {key}`",
-                                           ephemeral=True)
+async def learn(interaction: discord.Interaction, key: str, text: str):
+    await quote_commands.learn_quote(interaction=interaction, key=key, text=text)
 
 
 @client.tree.command(description="Insert a saved quote into the chat.")
@@ -89,13 +82,7 @@ async def learn(interaction: discord.Interaction, key: str, quote: str):
     key='Quote key, which was used when /learn-ing',
 )
 async def quote(interaction: discord.Interaction, key: str):
-    qte = libaxis.quote.get_quote(key)
-    if qte is None:
-        await interaction.response.send_message(
-            f":no_entry: Sorry, I don't know that quote. Teach me using /learn {key} <text>",
-            ephemeral=True)
-        return
-    await interaction.channel.send(qte.format())
+    await quote_commands.post_quote(interaction=interaction, key=key)
 
 
 @client.tree.command(description="Forget a saved quote.")
@@ -103,28 +90,12 @@ async def quote(interaction: discord.Interaction, key: str):
     key='Quote key, which was used when /learn-ing',
 )
 async def forget(interaction: discord.Interaction, key: str):
-    qte = libaxis.quote.get_quote(key)
-    if qte is None:
-        await interaction.response.send_message(f":no_entry: Sorry, I don't know that quote.",
-                                               ephemeral=True)
-        return
-    elif qte.player_id != interaction.user.id:
-        await interaction.response.send_message(f":no_entry: I know that quote but its not yours!",
-                                               ephemeral=True)
-        return
-    libaxis.quote.forget_quote(player_id=interaction.user.id, quote_key=key)
-    await interaction.response.send_message(f"Quote {key} has been forgotten", ephemeral=True)
+    await quote_commands.forget_quote(interaction=interaction, key=key)
 
 
 @client.tree.command(description="Show ids of the quotes you have taught me.")
-async def myquotes(interaction: discord.Interaction):
-    keys = libaxis.quote.get_user_quote_keys(player_id=interaction.user.id)
-    if len(keys) == 0:
-        await interaction.response.send_message(
-            f":no_entry: You haven't taught me any quotes. Teach me using `/learn <key> <text>`",
-            ephemeral=True)
-        return
-    await interaction.channel.send(f"Quotes you taught me: " + "; ".join(keys))
+async def quotes(interaction: discord.Interaction):
+    await quote_commands.print_quote_keys(interaction=interaction)
 
 
 # A Context Menu command is an app command that can be run on a member or on a message by

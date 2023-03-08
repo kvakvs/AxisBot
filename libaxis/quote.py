@@ -1,5 +1,7 @@
 from typing import Optional
 
+import discord
+
 from libaxis import db
 
 DATABASE = db.DB
@@ -11,8 +13,8 @@ class Quote:
         self.player_id = player_id
         self.text = text
 
-    def format(self):
-        return f"{self.text}"
+    def format(self) -> str:
+        return self.text
 
 
 def get_quote(key: str) -> Optional[Quote]:
@@ -59,7 +61,7 @@ def forget_quote(player_id: int, quote_key: str):
     DATABASE.commit()
 
 
-def get_user_quote_keys(player_id: int):
+def get_user_quote_keys(player_id: int) -> list[str]:
     """
     Get all quote keys for a user
     :param player_id: Who taught the quote
@@ -68,5 +70,17 @@ def get_user_quote_keys(player_id: int):
     global DATABASE
     c = DATABASE.cursor()
     c.execute("SELECT quote_key FROM quotes WHERE player_id = ? ORDER BY quote_key", (player_id,))
+    result = c.fetchall()
+    return [row[0] for row in result] if result is not None else []
+
+
+def get_other_users_quote_keys(player_id: int) -> list[str]:
+    """
+    Get all quote keys not owned by the user
+    :return: List of quote keys
+    """
+    global DATABASE
+    c = DATABASE.cursor()
+    c.execute("SELECT quote_key FROM quotes WHERE player_id <> ? ORDER BY quote_key", (player_id,))
     result = c.fetchall()
     return [row[0] for row in result] if result is not None else []

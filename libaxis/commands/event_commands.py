@@ -5,7 +5,7 @@ import discord
 
 import libaxis
 from libaxis import players, events, event_ui
-from libaxis.conf import guild_conf
+from libaxis.conf import guild_conf, delete_after
 
 logger = logging.getLogger('commands')
 
@@ -14,10 +14,10 @@ def missing_required_officer_role(interaction: discord.Interaction):
     role_name = guild_conf['manager_role']
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
-    return role in interaction.user.roles
+    return role not in interaction.user.roles
 
 
-async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):
+async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):
     """ (Admin only) Player has deposited (positive) or withdrew (negative) gold.
     """
     players.ensure_exists(who.id, str(who), who.display_name)
@@ -26,6 +26,7 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
         if missing_required_officer_role(interaction):
             await interaction.response.send_message(
                 f':no_entry: Must have {guild_conf["manager_role"]} role to modify the wallets',
+                delete_after=delete_after,
                 ephemeral=True)
             return
 
@@ -34,19 +35,25 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
         display_name = players.get_display_name(who.id)
         await interaction.response.send_message(
             f'The gold ({gold}) has been deposited for the player {display_name} ({who}), "'
-            f'"balance is now {balance}', ephemeral=True)
-    else:
-        balance = players.get_balance(who.id)
-        await interaction.response.send_message(
-            f'The player {who} has balance of {balance}', ephemeral=True)
+            f'"balance is now {balance}',
+            delete_after=delete_after,
+            ephemeral=True)
+
+    balance = players.get_balance(who.id)
+    await interaction.response.send_message(
+        f'The player {who} has balance of {balance}',
+        delete_after=delete_after,
+        ephemeral=True)
 
 
-async def bid(client: discord.Client, interaction: discord.Interaction):
+async def place_bid(client: discord.Client, interaction: discord.Interaction):
     """ Any participant can bid on the latest event
     """
     event_id = events.find_latest_event()
     if event_id is None:
-        await interaction.response.send_message(f':no_entry: No event exists, can''t bid just yet', ephemeral=True)
+        await interaction.response.send_message(f':no_entry: No event exists, can''t bid just yet',
+                                                delete_after=delete_after,
+                                                ephemeral=True)
         return
 
     # post buttons view
@@ -56,6 +63,7 @@ async def bid(client: discord.Client, interaction: discord.Interaction):
                                      libaxis.outcome.get_outcomes(event_id=event_id)))
     if len(available_outcomes) == 0:
         await interaction.response.send_message(f':no_entry: All outcomes for this event have been taken',
+                                                delete_after=delete_after,
                                                 ephemeral=True)
         return
 
@@ -74,15 +82,19 @@ async def bid(client: discord.Client, interaction: discord.Interaction):
         view.add_item(b)
 
     # view.message = await interaction.user.send(view=view)  # save sent message for update on timeout
-    view.message = await interaction.response.send_message(ephemeral=True, view=view)
+    view.message = await interaction.response.send_message(
+        view=view,
+        delete_after=delete_after,
+        ephemeral=True)
 
 
-async def ulduar(interaction: discord.Interaction, name: str):
+async def post_ulduar_event(interaction: discord.Interaction, name: str):
     """ (Admin only) Creates an Ulduar gambo event
     """
     if missing_required_officer_role(interaction):
         await interaction.response.send_message(
             f':no_entry: Must have {guild_conf["manager_role"]} role to create events',
+            delete_after=delete_after,
             ephemeral=True)
         return
 
@@ -97,24 +109,29 @@ async def ulduar(interaction: discord.Interaction, name: str):
 
     await interaction.response.send_message(
         f'Event "{name}" has been created, use /bid to show the bidding buttons',
+        delete_after=delete_after,
         ephemeral=True)
-    # return bid(interaction)
 
 
-async def bump(client: discord.Client, interaction: discord.Interaction):
+async def bump_event(client: discord.Client, interaction: discord.Interaction):
     """
     Repost the latest event again and delete it high up in the channel
     """
     if missing_required_officer_role(interaction):
         await interaction.response.send_message(
             f':no_entry: Must have {guild_conf["manager_role"]} role to bump events',
+            delete_after=delete_after,
             ephemeral=True)
         return
 
     event_id = events.find_latest_event()
     if event_id is None:
-        await interaction.response.send_message(f':no_entry: No event exists, can''t bump just yet', ephemeral=True)
+        await interaction.response.send_message(f':no_entry: No event exists, can''t bump just yet',
+                                                delete_after=delete_after,
+                                                ephemeral=True)
         return
 
     await events.bump_event(event_id=event_id, client=client)
-    await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted', ephemeral=True)
+    await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted',
+                                            delete_after=1.0,
+                                            ephemeral=True)
