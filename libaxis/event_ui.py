@@ -3,6 +3,7 @@ from typing import Optional, Union
 import discord.ui
 from discord import ButtonStyle, Emoji, PartialEmoji
 
+import libaxis.bet
 from libaxis import events
 
 
@@ -43,7 +44,7 @@ class OutcomeButton(discord.ui.Button):
         self.gold = gold
 
     async def callback(self, interaction: discord.Interaction):
-        bet_attempt = events.bet_on_outcome(
+        bet_attempt = libaxis.bet.bet_on_outcome(
                 event_id=self.event_id,
                 outcome_id=self.outcome_id,
                 player_id=interaction.user.id,

@@ -1,7 +1,11 @@
+# !/bin/env python
+
 import logging
 from typing import Optional
 
 import discord
+
+import libaxis.outcome
 from libaxis.bot_client import MyClient
 from libaxis import players, events, event_ui
 from libaxis.conf import conf, bot_conf, guild_conf
@@ -45,13 +49,16 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
 
     if gold is not None:
         if role not in interaction.user.roles:
-            await interaction.response.send_message(f':no_entry: Must have {role_name} role to modify the wallets', ephemeral=True)
+            await interaction.response.send_message(
+                f':no_entry: Must have {role_name} role to modify the wallets', ephemeral=True)
             return
 
         players.add_balance(who.id, gold)
         balance = players.get_balance(who.id)
+        display_name = players.get_display_name(who.id)
         await interaction.response.send_message(
-            f'The gold ({gold}) has been deposited for the player {who}, balance is now {balance}', ephemeral=True)
+            f'The gold ({gold}) has been deposited for the player {display_name} ({who}), "'
+            f'"balance is now {balance}', ephemeral=True)
     else:
         balance = players.get_balance(who.id)
         await interaction.response.send_message(
@@ -71,7 +78,7 @@ async def bid(interaction: discord.Interaction):
     # post buttons view
     view = event_ui.EventView(event_id=event_id)
 
-    for outcome in events.get_outcomes(event_id=event_id):
+    for outcome in libaxis.outcome.get_outcomes(event_id=event_id):
         # emoji = discord.PartialEmoji(name=outcome.get_first_word())
         bet_amount = guild_conf['bet_amount']
         b = event_ui.OutcomeButton(
