@@ -43,18 +43,19 @@ class OutcomeButton(discord.ui.Button):
         self.gold = gold
 
     async def callback(self, interaction: discord.Interaction):
-        if events.bet_on_outcome(
+        bet_attempt = events.bet_on_outcome(
                 event_id=self.event_id,
                 outcome_id=self.outcome_id,
                 player_id=interaction.user.id,
                 display_name=interaction.user.display_name,
-                gold=self.gold):
+                gold=self.gold)
+        if bet_attempt is None:
             await interaction.response.send_message(
-                f"Your bet of {self.gold} on {self.outcome_name} was accepted",
+                f":white_check_mark: Your bet of {self.gold} on {self.outcome_name} was accepted",
                 ephemeral=True)
             # Update the embed
             await events.update_event_embed(event_id=self.event_id, client=self.client)
         else:
             await interaction.response.send_message(
-                f"Your bet on {self.outcome_name} was not accepted, not enough gold in your gambling wallet",
+                f":no_entry: Your bet on {self.outcome_name} was not accepted: {bet_attempt}",
                 ephemeral=True)

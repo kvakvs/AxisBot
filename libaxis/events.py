@@ -151,7 +151,8 @@ def create_embed(event_id: int) -> discord.Embed:
 
     pot = event.get_pot()
     embed.set_footer(text=f"Total in the pot: {pot}\n"
-                          "Can i bet more? Yes you can, but you can't win more than there was in the pot!\n"
+                          f"Minimum bid: {guild_conf['bet_amount']}g\n"
+                          "\n"
                           f"Drop a multiple of x{guild_conf['bet_amount']} gold into the guild bank, and ask an "
                           f"officer to confirm your deposit by using a `/wallet` command")
 
@@ -192,10 +193,36 @@ def add_ulduar_event(author: str, name: str, channel: int) -> Tuple[int, discord
     return event_id, create_embed(event_id)
 
 
-def bet_on_outcome(event_id: int, outcome_id: int, player_id: int, display_name: str, gold: int) -> bool:
+def find_bet(event_id: int, player_id: int) -> Optional[int]:
+    """ Return bet id for this event and player, or None if no bet was placed """
+    global EVENTS
+    c = EVENTS.cursor()
+    c.execute("SELECT outcome_id FROM bets WHERE event_id = ? AND player_id = ?",
+              (event_id, player_id,))
+    result = c.fetchone()
+    return result if result is not None else None
+
+
+def find_outcome_bet(event_id: int, outcome_id: int) -> Optional[int]:
+    """ Return bet id for this event and outcome, or None if no bet was placed """
+    global EVENTS
+    c = EVENTS.cursor()
+    c.execute("SELECT bet_id FROM bets WHERE event_id = ? AND outcome_id = ?",
+              (event_id, outcome_id,))
+    result = c.fetchone()
+    return result if result is not None else None
+
+
+def bet_on_outcome(event_id: int, outcome_id: int, player_id: int, display_name: str, gold: int) -> Optional[str]:
     wallet = players.get_balance(player_id=player_id)
     if wallet < gold:
-        return False
+        return f"You do not have {guild_conf['bet_amount']}g available in your wallet, "\
+               "ask an officer to top you up with a /wallet command"
+
+    if find_bet(event_id=event_id, player_id=player_id) is not None:
+        return "You already have placed a bet on this event"
+    if find_outcome_bet(event_id=event_id, outcome_id=outcome_id) is not None:
+        return "Someone already has placed a bet on this outcome"
 
     outcome = outcome_from_id(outcome_id)
 
@@ -210,10 +237,11 @@ def bet_on_outcome(event_id: int, outcome_id: int, player_id: int, display_name:
                    (gold, outcome_id, player_id,))
     EVENTS.commit()
 
-    return True
+    return None # no error
 
 
 def update_event_embed_id(event_id: int, embed_id: int):
+    """ Having posted embed for the event, store its id. """
     global EVENTS
     EVENTS.execute("UPDATE events SET embed_id = ? WHERE event_id = ?", (embed_id, event_id,))
     EVENTS.commit()

@@ -45,7 +45,7 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
 
     if gold is not None:
         if role not in interaction.user.roles:
-            await interaction.response.send_message(f'Must have {role_name} role to modify the wallets', ephemeral=True)
+            await interaction.response.send_message(f':no_entry: Must have {role_name} role to modify the wallets', ephemeral=True)
             return
 
         players.add_balance(who.id, gold)
@@ -65,7 +65,7 @@ async def bid(interaction: discord.Interaction):
     """
     event_id = events.find_latest_event()
     if event_id is None:
-        await interaction.response.send_message(f'No event exists, can''t bid just yet', ephemeral=True)
+        await interaction.response.send_message(f':no_entry: No event exists, can''t bid just yet', ephemeral=True)
         return
 
     # post buttons view
@@ -85,8 +85,8 @@ async def bid(interaction: discord.Interaction):
             custom_id=f"outcome_id={outcome.outcome_id}")
         view.add_item(b)
 
-    view.message = await interaction.user.send(view=view)  # save sent message for update on timeout
-    await interaction.response.send_message(f'Sent you a private message, please check', ephemeral=True)
+    # view.message = await interaction.user.send(view=view)  # save sent message for update on timeout
+    view.message = await interaction.response.send_message(ephemeral=True, view=view)
 
 
 @client.tree.command()
@@ -100,7 +100,9 @@ async def ulduar(interaction: discord.Interaction, name: str):
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
     if role not in interaction.user.roles:
-        await interaction.response.send_message(f'Must have {role_name} role to create events', ephemeral=True)
+        await interaction.response.send_message(
+            f':no_entry: Must have {role_name} role to create events',
+            ephemeral=True)
         return
 
     # create event
@@ -125,11 +127,12 @@ async def bump(interaction: discord.Interaction):
     """
     event_id = events.find_latest_event()
     if event_id is None:
-        await interaction.response.send_message(f'No event exists, can''t bump just yet', ephemeral=True)
+        await interaction.response.send_message(f':no_entry: No event exists, can''t bump just yet', ephemeral=True)
         return
 
     await events.bump_event(event_id=event_id, client=client)
     await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted', ephemeral=True)
+
 
 # # The rename decorator allows us to change the display of the parameter on Discord.
 # # In this example, even though we use `text_to_send` in the code, the client will use `text` instead.
