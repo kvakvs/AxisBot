@@ -45,9 +45,9 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
     await event_commands.modify_or_show_wallet(interaction=interaction, who=who, gold=gold)
 
 
-@client.tree.command(description="Show buttons to bid on the latest event")
-async def bid(interaction: discord.Interaction):
-    await  event_commands.place_bid(client=client, interaction=interaction)
+@client.tree.command(description="Show buttons to place your bet on the latest event")
+async def bet(interaction: discord.Interaction):
+    await event_commands.place_bet(client=client, interaction=interaction)
 
 
 @client.tree.command(

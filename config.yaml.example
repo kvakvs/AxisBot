@@ -5,3 +5,4 @@ guild:
   id: "793741707601903618"
   name: "Axis Mirage Raceway"
   manager_role: "Warlord"
+  bet_amount: 200 # the bids and wallet amounts must be a multiple of this number

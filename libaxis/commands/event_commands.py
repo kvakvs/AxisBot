@@ -34,8 +34,8 @@ async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.M
         balance = players.get_balance(who.id)
         display_name = players.get_display_name(who.id)
         await interaction.response.send_message(
-            f'The gold ({gold}) has been deposited for the player {display_name} ({who}), "'
-            f'"balance is now {balance}',
+            f'The gold ({gold}) has been deposited for the player {display_name} ({who}), '
+            f'balance is now {balance}',
             delete_after=delete_after,
             ephemeral=True)
 
@@ -46,7 +46,7 @@ async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.M
         ephemeral=True)
 
 
-async def place_bid(client: discord.Client, interaction: discord.Interaction):
+async def place_bet(client: discord.Client, interaction: discord.Interaction):
     """ Any participant can bid on the latest event
     """
     event_id = events.find_latest_event()

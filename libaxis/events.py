@@ -15,6 +15,7 @@ class Event:
     Describes a weekly gambling event.
     Create only after the previous week has been concluded.
     """
+
     def __init__(self, event_id: int, name: str, author: str, channel_id: int, embed_id: Optional[int] = None):
         self.event_id = event_id
         self.name = name
@@ -62,9 +63,9 @@ def create_embed(event_id: int) -> discord.Embed:
 
     pot = event.get_pot()
     embed.set_footer(text=f"Total in the pot: {pot}g\n"
-                          f"Minimum bid: {guild_conf['bet_amount']}g\n"
+                          f"To place a bet: {guild_conf['bet_amount']}g\n"
                           "\n"
-                          f"Type `/bid` and hit Enter to place a bet'n"
+                          f"Type `/bet` and hit Enter to place a bet\n"
                           f"Drop x{guild_conf['bet_amount']}g into the guild bank, ask an "
                           f"officer to confirm your deposit")
 
