@@ -56,6 +56,7 @@ def create_embed(event_id: int) -> discord.Embed:
         embed.add_field(name=outcome.name,
                         value=format_outcome(outcome),
                         inline=True)
+    success_outcomes = "; ".join([o.name for o in outcomes])
 
     embed.set_author(name=event.author,
                      # url="https://discord.com/1",
@@ -63,11 +64,10 @@ def create_embed(event_id: int) -> discord.Embed:
 
     pot = event.get_pot()
     embed.set_footer(text=f"Total in the pot: {pot}g\n"
+                          f"Success outcomes: {success_outcomes}\n"
                           f"To place a bet: {guild_conf['bet_amount']}g\n"
                           "\n"
-                          f"Type `/bet` and hit Enter to place a bet\n"
-                          f"Drop x{guild_conf['bet_amount']}g into the guild bank, ask an "
-                          f"officer to confirm your deposit")
+                          f"Type `/bet` and hit Enter to place a bet")
 
     return embed
 

@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS outcomes
     name       text,
     FOREIGN KEY (event_id) REFERENCES events (event_id)
 );
+ALTER TABLE outcomes ADD success integer DEFAULT false;
 
 CREATE TABLE IF NOT EXISTS bets
 (

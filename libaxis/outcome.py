@@ -51,3 +51,16 @@ def get_outcomes(event_id: int) -> list[Outcome]:
 def format_outcome(outcome: Outcome) -> str:
     from libaxis.bet import format_bet, get_bets
     return "; ".join([format_bet(bet) for bet in get_bets(outcome.outcome_id)])
+
+
+def toggle_first_matching_outcome(event_id: int, search_str: str):
+    """
+    Toggle the matching outcomes in the event, by a name substring
+    :param event_id: Event ID
+    :param search_str: Outcome search substring
+    """
+    global DATABASE
+    c = DATABASE.cursor()
+    c.execute("UPDATE outcomes SET success = NOT success WHERE event_id = ? AND name LIKE ? ",
+              (event_id, f"%{search_str}%",))
+    c.commit()

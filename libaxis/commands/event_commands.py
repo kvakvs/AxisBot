@@ -10,8 +10,15 @@ from libaxis.conf import guild_conf, delete_after
 logger = logging.getLogger('commands')
 
 
-def missing_required_officer_role(interaction: discord.Interaction):
+def missing_required_manager_role(interaction: discord.Interaction):
     role_name = guild_conf['manager_role']
+    role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
+
+    return role not in interaction.user.roles
+
+
+def missing_required_event_manager_role(interaction: discord.Interaction):
+    role_name = guild_conf['event_manager_role']
     role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
 
     return role not in interaction.user.roles
@@ -23,7 +30,7 @@ async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.M
     players.ensure_exists(who.id, str(who), who.display_name)
 
     if gold is not None:
-        if missing_required_officer_role(interaction):
+        if missing_required_manager_role(interaction):
             await interaction.response.send_message(
                 f':no_entry: Must have {guild_conf["manager_role"]} role to modify the wallets',
                 delete_after=delete_after,
@@ -46,7 +53,7 @@ async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.M
         ephemeral=True)
 
 
-async def place_bet(client: discord.Client, interaction: discord.Interaction):
+async def place_bet(interaction: discord.Interaction):
     """ Any participant can bid on the latest event
     """
     event_id = events.find_latest_event()
@@ -71,7 +78,7 @@ async def place_bet(client: discord.Client, interaction: discord.Interaction):
         # emoji = discord.PartialEmoji(name=outcome.get_first_word())
         bet_amount = guild_conf['bet_amount']
         b = event_ui.OutcomeButton(
-            client=client,
+            client=interaction.client,
             event_id=event_id,
             outcome_id=outcome.outcome_id,
             gold=bet_amount,
@@ -91,7 +98,7 @@ async def place_bet(client: discord.Client, interaction: discord.Interaction):
 async def post_ulduar_event(interaction: discord.Interaction, name: str):
     """ (Admin only) Creates an Ulduar gambo event
     """
-    if missing_required_officer_role(interaction):
+    if missing_required_event_manager_role(interaction):  # must have event manager role
         await interaction.response.send_message(
             f':no_entry: Must have {guild_conf["manager_role"]} role to create events',
             delete_after=delete_after,
@@ -117,7 +124,7 @@ async def bump_event(client: discord.Client, interaction: discord.Interaction):
     """
     Repost the latest event again and delete it high up in the channel
     """
-    if missing_required_officer_role(interaction):
+    if missing_required_manager_role(interaction):
         await interaction.response.send_message(
             f':no_entry: Must have {guild_conf["manager_role"]} role to bump events',
             delete_after=delete_after,
@@ -135,3 +142,23 @@ async def bump_event(client: discord.Client, interaction: discord.Interaction):
     await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted',
                                             delete_after=1.0,
                                             ephemeral=True)
+
+
+def toggle_outcomes(interaction: discord.Interaction, search_str: str):
+    """ Finds and toggles matching outcomes.
+    """
+    event_id = events.find_latest_event()
+    if event_id is None:
+        await interaction.response.send_message(f':no_entry: No event exists, can''t toggle an outcome just yet',
+                                                delete_after=delete_after,
+                                                ephemeral=True)
+        return
+
+    import libaxis.outcome
+    libaxis.outcome.toggle_first_matching_outcome(event_id=event_id, search_str=search_str)
+    # Update the embed
+    await events.update_event_embed(event_id=event_id, client=interaction.client)
+    await interaction.response.send_message(
+        f'Outcomes matching {search_str} have been toggled and event has been updated',
+        delete_after=1.0,
+        ephemeral=True)

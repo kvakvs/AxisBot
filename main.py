@@ -36,10 +36,10 @@ async def on_ready():
     logger.info(f'Logged in as {client.user} (ID: {client.user.id})')
 
 
-@client.tree.command(description="Add or remove gold from the gambling wallet, only officers can do this.")
+@client.tree.command(description="[Manager role only] Add or remove gold from the gambling wallet.")
 @discord.app_commands.describe(
-    who='The player who is depositing or withdrawing gold',
-    gold='How much gold has been deposited (negative value for withdraw)',
+    who='Player''s discord name',
+    gold='How much gold to add or remove (negative value for withdraw)',
 )
 async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):
     await event_commands.modify_or_show_wallet(interaction=interaction, who=who, gold=gold)
@@ -47,11 +47,11 @@ async def wallet(interaction: discord.Interaction, who: discord.Member, gold: Op
 
 @client.tree.command(description="Show buttons to place your bet on the latest event")
 async def bet(interaction: discord.Interaction):
-    await event_commands.place_bet(client=client, interaction=interaction)
+    await event_commands.place_bet(interaction=interaction)
 
 
 @client.tree.command(
-    description="Post a new Ulduar raid event. Only officers can do this, this makes previous event inaccessible.")
+    description="[Event Manager role only] Post a new Ulduar raid event. Makes previous event inaccessible.")
 @discord.app_commands.describe(
     name='The title for the event',
 )
@@ -59,7 +59,13 @@ async def ulduar(interaction: discord.Interaction, name: str):
     await event_commands.post_ulduar_event(interaction=interaction, name=name)
 
 
-@client.tree.command(description="Repost the latest event, and delete the old message. Only officers can do this.")
+@client.tree.command(
+    description="[Event Manager role only] Toggles matching outcomes in the latest event, by a substring.")
+async def outcome(interaction: discord.Interaction, search_str: str):
+    await event_commands.toggle_outcomes(interaction=interaction, search_str=search_str)
+
+
+@client.tree.command(description="[Manager role only] Repost the latest event, and delete the old message.")
 async def bump(interaction: discord.Interaction):
     await event_commands.bump_event(client=client, interaction=interaction)
 
