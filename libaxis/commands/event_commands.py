@@ -100,7 +100,7 @@ async def post_ulduar_event(interaction: discord.Interaction, name: str):
     """
     if missing_required_event_manager_role(interaction):  # must have event manager role
         await interaction.response.send_message(
-            f':no_entry: Must have {guild_conf["manager_role"]} role to create events',
+            f':no_entry: Must have {guild_conf["event_manager_role"]} role to create events',
             delete_after=delete_after,
             ephemeral=True)
         return
@@ -144,9 +144,16 @@ async def bump_event(client: discord.Client, interaction: discord.Interaction):
                                             ephemeral=True)
 
 
-def toggle_outcomes(interaction: discord.Interaction, search_str: str):
+async def toggle_outcomes(interaction: discord.Interaction, search_str: str):
     """ Finds and toggles matching outcomes.
     """
+    if missing_required_event_manager_role(interaction):
+        await interaction.response.send_message(
+            f':no_entry: Must have {guild_conf["event_manager_role"]} role to update outcomes',
+            delete_after=delete_after,
+            ephemeral=True)
+        return
+
     event_id = events.find_latest_event()
     if event_id is None:
         await interaction.response.send_message(f':no_entry: No event exists, can''t toggle an outcome just yet',

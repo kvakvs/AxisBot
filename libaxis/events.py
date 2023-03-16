@@ -56,7 +56,9 @@ def create_embed(event_id: int) -> discord.Embed:
         embed.add_field(name=outcome.name,
                         value=format_outcome(outcome),
                         inline=True)
-    success_outcomes = "; ".join([o.name for o in outcomes])
+
+    success_outcomes = filter(lambda o: o.success == 1, outcomes)
+    success_outcomes_str = "; ".join([o.cut_first_word() for o in success_outcomes]) or "Not just yet?"
 
     embed.set_author(name=event.author,
                      # url="https://discord.com/1",
@@ -64,10 +66,11 @@ def create_embed(event_id: int) -> discord.Embed:
 
     pot = event.get_pot()
     embed.set_footer(text=f"Total in the pot: {pot}g\n"
-                          f"Success outcomes: {success_outcomes}\n"
+                          f"Success outcomes: {success_outcomes_str}\n"
                           f"To place a bet: {guild_conf['bet_amount']}g\n"
                           "\n"
-                          f"Type `/bet` and hit Enter to place a bet")
+                          f"Type `/bet` and hit Enter to place a bet.\n"
+                          f"Officers can update your betting wallet when you deposit.\n")
 
     return embed
 
@@ -126,8 +129,11 @@ async def bump_event(event_id: int, client: discord.Client):
     """
     event = event_from_id(event_id)
     channel = client.get_channel(event.channel_id)
-    msg = await channel.fetch_message(event.embed_id)
-    await msg.delete(delay=1.0)
+    try:
+        msg = await channel.fetch_message(event.embed_id)
+        await msg.delete(delay=1.0)
+    except discord.NotFound:
+        pass
     bumped = await channel.send(embed=create_embed(event_id))
     update_event_embed_id(event_id, bumped.id)
 
