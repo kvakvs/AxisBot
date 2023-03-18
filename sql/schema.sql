@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS item_cache
 (
     item_id          integer PRIMARY KEY,
     item_name        text,
-    wowhead_xml      text,   -- wowhead XML of the recipe
-    wowhead_stripped text,   -- wowhead plain text of the recipe
-    link             text,   -- wowhead link to the recipe
-    subclass_id      integer -- wowhead enum 10-jc designs, 2-recipes
+    wowhead_xml      text, -- wowhead XML of the recipe
+    wowhead_stripped text, -- wowhead plain text of the recipe
+    link             text, -- wowhead link to the recipe
+    subclass         text  -- wowhead subclass field for the item type
 );
 
 CREATE TABLE IF NOT EXISTS craftables
