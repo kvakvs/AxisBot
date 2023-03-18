@@ -6,22 +6,9 @@ import discord
 import libaxis
 from libaxis import players, events, event_ui
 from libaxis.conf import guild_conf, delete_after
+from libaxis.rolecheck import missing_required_manager_role, missing_required_event_manager_role
 
 logger = logging.getLogger('commands')
-
-
-def missing_required_manager_role(interaction: discord.Interaction):
-    role_name = guild_conf['manager_role']
-    role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
-
-    return role not in interaction.user.roles
-
-
-def missing_required_event_manager_role(interaction: discord.Interaction):
-    role_name = guild_conf['event_manager_role']
-    role = discord.utils.find(lambda r: r.name == role_name, interaction.guild.roles)
-
-    return role not in interaction.user.roles
 
 
 async def modify_or_show_wallet(interaction: discord.Interaction, who: discord.Member, gold: Optional[int]):

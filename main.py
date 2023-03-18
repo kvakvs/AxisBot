@@ -5,20 +5,30 @@ from typing import Optional
 
 import discord
 
-import libaxis.outcome
-from libaxis import quote
-from libaxis.commands import quote_commands, event_commands
 from libaxis.bot_client import MyClient
+from libaxis.commands import quote_commands, event_commands, crafting_commands
 from libaxis.conf import conf, bot_conf, guild_conf
 
-logging.basicConfig(filename="axisbot.log",
-                    filemode='a',
-                    format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S',
-                    level=logging.DEBUG)
+logger = None
 
-logging.info("Running Axis Bot")
-logger = logging.getLogger('main')
+
+def init_logging():
+    logging.basicConfig(filename="axisbot.log",
+                        filemode='a',
+                        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                        datefmt='%H:%M:%S',
+                        level=logging.DEBUG)
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger().addHandler(console)
+
+    global logger
+    logger = logging.getLogger('main')
+    logger.info("Running Axis Bot")
+
 
 intents = discord.Intents(messages=True, reactions=True, guilds=True)
 # intents = discord.Intents(326417524800)
@@ -68,6 +78,30 @@ async def outcome(interaction: discord.Interaction, search_str: str):
 @client.tree.command(description="[Manager role only] Repost the latest event, and delete the old message.")
 async def bump(interaction: discord.Interaction):
     await event_commands.bump_event(client=client, interaction=interaction)
+
+
+# ===============================================================================
+# Craftables, crafting
+# ===============================================================================
+
+@client.tree.command(description="Teach the bot that or someone else can create an item")
+async def learn_craft(interaction: discord.Interaction, item_id: int, who: Optional[discord.Member]):
+    await crafting_commands.learn_craft(interaction=interaction, who=who, item_id=item_id)
+
+
+@client.tree.command(description="Teach the bot that you or someone else can no longer create an item")
+async def forget_craft(interaction: discord.Interaction, item_id: int, who: Optional[discord.Member]):
+    await crafting_commands.forget_craft(interaction=interaction, who=who, item_id=item_id)
+
+
+@client.tree.command(description="Search for any craftable item, can search item descriptions and reagents too")
+async def craft(interaction: discord.Interaction, text: str):
+    await crafting_commands.find_crafts(interaction=interaction, text=text, subclass=None)
+
+
+@client.tree.command(description="Search for a Jewelcrafting design, can search item descriptions and reagents too")
+async def jc(interaction: discord.Interaction, text: str):
+    await crafting_commands.find_crafts(interaction=interaction, text=text, subclass="Jewelcrafting Designs")
 
 
 # ===============================================================================
@@ -139,4 +173,5 @@ async def quotes(interaction: discord.Interaction):
 #     await log_channel.send(embed=embed, view=url_view)
 
 
+init_logging()
 client.run(bot_conf['token'])
