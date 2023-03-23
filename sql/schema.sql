@@ -45,7 +45,6 @@ CREATE TABLE IF NOT EXISTS bets
     FOREIGN KEY (outcome_id) REFERENCES outcomes (outcome_id)
 );
 
-DROP TABLE IF EXISTS quotes;
 CREATE TABLE IF NOT EXISTS quotes
 (
     quote_key text PRIMARY KEY, -- short key to invoke the quote

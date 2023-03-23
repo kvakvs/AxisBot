@@ -102,7 +102,8 @@ def add_ulduar_event(author: str, name: str, channel: int) -> Tuple[int, discord
                  ":snowflake: Hodir",
                  ":cloud_lightning: Thorim",
                  ":sunflower: Freya",
-                 ":squid: Vezax"]:
+                 ":squid: Vezax",
+                 ":star: Algalon"]:
         DATABASE.execute("INSERT INTO outcomes(event_id, name) VALUES(?, ?)", (event_id, boss,))
 
     DATABASE.commit()
