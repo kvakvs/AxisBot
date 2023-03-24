@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS events
     name       text,   -- event name
     author     text,   -- display name of the author
     channel_id integer,
-    embed_id   integer -- the posted embed
+    embed_id   integer, -- the posted embed
+    is_locked  integer DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS outcomes

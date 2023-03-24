@@ -16,12 +16,14 @@ class Event:
     Create only after the previous week has been concluded.
     """
 
-    def __init__(self, event_id: int, name: str, author: str, channel_id: int, embed_id: Optional[int] = None):
-        self.event_id = event_id
-        self.name = name
+    def __init__(self, event_id: int, name: str, author: str, channel_id: int, is_locked: bool,
+                 embed_id: Optional[int] = None):
         self.author = author
         self.channel_id = channel_id
         self.embed_id = embed_id
+        self.event_id = event_id
+        self.is_locked = is_locked
+        self.name = name
 
     def get_pot(self) -> int:
         global DATABASE
@@ -34,22 +36,30 @@ class Event:
 def event_from_id(event_id: int) -> Event:
     global DATABASE
     c = DATABASE.cursor()
-    c.execute("SELECT event_id, name, author, channel_id, embed_id "
+    c.execute("SELECT event_id, name, author, channel_id, embed_id, is_locked "
               "FROM events WHERE event_id = ?", (event_id,))
     result = c.fetchone()
     return Event(event_id=result[0],
                  name=result[1],
                  author=result[2],
                  channel_id=result[3],
-                 embed_id=result[4]) if result is not None else None
+                 embed_id=result[4],
+                 is_locked=result[5]) if result is not None else None
 
 
 def create_embed(event_id: int) -> discord.Embed:
     event = event_from_id(event_id)
-    embed = discord.Embed(title=event.name,
+
+    descriptions = ["Gamble for Val'anyr fragments in Ulduar this week."]
+    color = 0xFF5733
+    if event.is_locked:
+        descriptions.append(":lock: This event is locked. No more bets can be placed.")
+        color = 0xFF0000  # make it red
+
+    embed = discord.Embed(title=f"{event.name} [event_id={event_id}]",
                           url="https://github.com/kvakvs/AxisBot/blob/master/README.md",
-                          description="Gamble for Val'anyr fragments in Ulduar this week",
-                          color=0xFF5733)
+                          description=" ".join(descriptions),
+                          color=color)
 
     outcomes = get_outcomes(event_id)
     for outcome in outcomes:
@@ -145,3 +155,17 @@ def find_latest_event():
     c.execute("SELECT event_id FROM events ORDER BY event_id DESC LIMIT 1")
     result = c.fetchone()
     return result[0] if result[0] is not None else None
+
+
+def lock_event(event_id: int):
+    global DATABASE
+    DATABASE.execute("UPDATE events SET is_locked = 1 WHERE event_id = ?", (event_id,))
+    DATABASE.commit()
+
+
+def is_event_locked(event_id: int) -> bool:
+    global DATABASE
+    c = DATABASE.cursor()
+    c.execute("SELECT is_locked FROM events WHERE event_id = ?", (event_id,))
+    result = c.fetchone()
+    return result[0] if result[0] is not None else False

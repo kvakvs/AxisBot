@@ -77,7 +77,12 @@ async def outcome(interaction: discord.Interaction, search_str: str):
 
 @client.tree.command(description="[Manager role only] Repost the latest event, and delete the old message.")
 async def bump(interaction: discord.Interaction):
-    await event_commands.bump_event(client=client, interaction=interaction)
+    await event_commands.bump_event(interaction=interaction)
+
+
+@client.tree.command(description="[Event manager role only] Lock the event by id, or latest event.")
+async def lock_event(interaction: discord.Interaction, event_id: Optional[int]):
+    await event_commands.lock_event(interaction=interaction, event_id=event_id)
 
 
 # ===============================================================================

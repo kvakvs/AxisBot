@@ -50,15 +50,23 @@ async def place_bet(interaction: discord.Interaction):
                                                 ephemeral=True)
         return
 
+    if events.is_event_locked(event_id):
+        await interaction.response.send_message(
+            f':no_entry: Event [event_id={event_id}] is locked, the event has already started or finished',
+            delete_after=delete_after,
+            ephemeral=True)
+        return
+
     # post buttons view
     view = event_ui.EventView(event_id=event_id)
 
     available_outcomes = list(filter(lambda each_o: each_o.is_available(),
                                      libaxis.outcome.get_outcomes(event_id=event_id)))
     if len(available_outcomes) == 0:
-        await interaction.response.send_message(f':no_entry: All outcomes for this event have been taken',
-                                                delete_after=delete_after,
-                                                ephemeral=True)
+        await interaction.response.send_message(
+            f':no_entry: All outcomes for this event [event_id={event_id}] have been taken',
+            delete_after=delete_after,
+            ephemeral=True)
         return
 
     for outcome in available_outcomes:
@@ -107,7 +115,7 @@ async def post_ulduar_event(interaction: discord.Interaction, name: str):
         ephemeral=True)
 
 
-async def bump_event(client: discord.Client, interaction: discord.Interaction):
+async def bump_event(interaction: discord.Interaction):
     """
     Repost the latest event again and delete it high up in the channel
     """
@@ -125,7 +133,7 @@ async def bump_event(client: discord.Client, interaction: discord.Interaction):
                                                 ephemeral=True)
         return
 
-    await events.bump_event(event_id=event_id, client=client)
+    await events.bump_event(event_id=event_id, client=interaction.client)
     await interaction.response.send_message(f'Event reposted and refreshed, old message is deleted',
                                             delete_after=1.0,
                                             ephemeral=True)
@@ -155,4 +163,13 @@ async def toggle_outcomes(interaction: discord.Interaction, search_str: str):
     await interaction.response.send_message(
         f'Outcomes matching {search_str} have been toggled and event has been updated',
         delete_after=1.0,
+        ephemeral=True)
+
+
+async def lock_event(interaction: discord.Interaction, event_id: Optional[int]):
+    event_id = event_id or events.find_latest_event()
+    events.lock_event(event_id=event_id)
+    await interaction.response.send_message(
+        f'Event with id {event_id} has been locked, no more bets can be placed',
+        delete_after=5.0,
         ephemeral=True)
