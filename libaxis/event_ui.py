@@ -17,7 +17,8 @@ class EventView(discord.ui.View):
         # for item in self.children:
         #     item.disabled = True
         self.children.clear()  # empty the buttons frame
-        await self.message.edit(view=self)
+        if self.message:
+            await self.message.edit(view=self)
 
 
 #     @discord.ui.button(label="Hello", style=discord.ButtonStyle.success)
